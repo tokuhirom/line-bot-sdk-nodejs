@@ -1,6 +1,5 @@
 import { Readable } from "node:stream";
 import { HTTPFetchError } from "./exceptions";
-import * as qs from "node:querystring";
 
 const pkg = require("../package.json");
 export interface FetchRequestConfig {
@@ -41,7 +40,7 @@ export default class HTTPFetchClient {
   public async get<T>(url: string, params?: any): Promise<Response> {
     const requestUrl = new URL(url, this.baseURL);
     if (params) {
-      requestUrl.search = qs.stringify(params);
+      requestUrl.search = new URLSearchParams(params).toString();
     }
     const response = await fetch(requestUrl, {
       headers: this.defaultHeaders,
@@ -90,13 +89,19 @@ export default class HTTPFetchClient {
 
   public async postForm(url: string, body?: any): Promise<Response> {
     const requestUrl = new URL(url, this.baseURL);
+    const formParams = new URLSearchParams();
+    for (const key in body) {
+      if (body.hasOwnProperty(key)) {
+        formParams.append(key, body[key]);
+      }
+    }
     const response = await fetch(requestUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         ...this.defaultHeaders,
       },
-      body: qs.stringify(body),
+      body: formParams.toString(),
     });
     await this.checkResponseStatus(response);
     return response;

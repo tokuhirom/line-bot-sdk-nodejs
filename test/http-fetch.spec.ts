@@ -187,7 +187,7 @@ describe("http(fetch)", () => {
 
     const scope = mockPostForm(
       "/post/body",
-      "id=12345&message=hello%2C%20body!",
+      "id=12345&message=hello%2C+body%21",
     );
     const res = await client.postForm(`/post/body`, testBody);
     equal(scope.isDone(), true);
