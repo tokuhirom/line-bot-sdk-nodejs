@@ -96,6 +96,30 @@ describe("http(fetch)", () => {
     return result;
   };
 
+  const mockPostForm = (path: string, expectedBody: string) => {
+    const result = new MSWResult();
+    server.use(
+      http.post(baseURL + path, async ({ request, params, cookies }) => {
+        for (const key in interceptionOption) {
+          equal(request.headers.get(key), interceptionOption[key]);
+        }
+
+        equal(
+          request.headers.get("content-type"),
+          "application/x-www-form-urlencoded",
+        );
+
+        const gotBody = await request.text();
+        deepEqual(gotBody, expectedBody);
+
+        result.done();
+
+        return HttpResponse.json({});
+      }),
+    );
+    return result;
+  };
+
   const mockDelete = (path: string, expectedQuery?: Record<string, string>) => {
     const result = new MSWResult();
     server.use(
@@ -150,6 +174,22 @@ describe("http(fetch)", () => {
 
     const scope = mockPost("/post/body", testBody);
     const res = await client.post(`/post/body`, testBody);
+    equal(scope.isDone(), true);
+
+    deepEqual(await res.json(), {});
+  });
+
+  it("postForm", async () => {
+    const testBody = {
+      id: 12345,
+      message: "hello, body!",
+    };
+
+    const scope = mockPostForm(
+      "/post/body",
+      "id=12345&message=hello%2C%20body!",
+    );
+    const res = await client.postForm(`/post/body`, testBody);
     equal(scope.isDone(), true);
 
     deepEqual(await res.json(), {});
